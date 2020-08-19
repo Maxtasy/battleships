@@ -1,144 +1,309 @@
 *, *::before, *::after {
     box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
 }
 
 body {
-    color: white;
+    color: #D9D9D9;
     margin: 0;
-    min-height: 100vh;
+    background-color: #0D0D0D;
+    overflow-x: hidden;
+}
+
+.splash-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
-    background-color: #0D0D0D;
+    align-items: center;
+    height: 66vh;
+}
+
+.splash-title {
+    color: #962D3E;
+    font-family: "Bangers", cursive;
+    font-size: 10rem;
+}
+
+.splash-battleship-image {
+    position: absolute;
+    bottom: 5vh;
+    left: 20vw;
+    width: 100%;
+    transform: rotateY(180deg);
+    pointer-events: none;
+    opacity: .25;
+}
+
+.btn {
+    color: #0D0D0D;
+    background-color: #348899;
+    padding: .5em 1em;
+    outline: none;
+    border: none;
+    text-decoration: none;
+    border-radius: 100vmax;
+    font-size: inherit;
+}
+
+.btn:hover,
+.btn:focus {
+    background-color: #276875;
+}
+
+.splash-btn {
+    font-size: 2rem;
+    margin-left: 2rem;
+}
+
+.splash-btn:first-child {
+    margin-left: 0;
 }
 
 .container {
     display: flex;
-    gap: 3%;
+    justify-content: center;
+    width: 100%;
 }
 
-.grid {
-    box-sizing: initial;
-    width: 400px;
-    height: 400px;
+.battleship-grid {
+    margin: 2vmin;
+    display: grid;
+    grid-template-rows: repeat(10, 4.6vmin);
+    grid-template-columns: repeat(10, 4.6vmin);
+    background-color: #5ec1f0;
+    border: 1px solid #D9D9D9;
+}
+
+.battleship-grid div {
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.taken,
+.ship {
+    background-color: hsl(0, 0%, 80%);
+    position: relative;
+}
+
+.ship-display {
+    display: flex;
+}
+
+.ship {
     display: flex;
     flex-wrap: wrap;
-    background-color: #348899;
-    border: 2px solid grey;
+    margin: 1vmin;
+    width: calc(4.6vmin * var(--width, 1));
+    height: calc(4.6vmin * var(--height, 1));
+    border-radius: 2.3vmin;
 }
 
-.grid div {
+.ship > div {
     cursor: pointer;
-    width: 10%;
-    height: 10%;
-    border: 1px solid white;
+    width: 4.6vmin;
+    height: 4.6vmin;
 }
 
-.grid div.hit {
-    background-color: red;
+.taken.first.horizontal,
+.taken.first.horizontal::before {
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
 }
 
-.grid div.miss {
-    background-color: white;
+.taken.last.horizontal,
+.taken.last.horizontal::before {
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
 }
 
-.grid-display.vertical {
-    display: flex;
+.taken.first.vertical,
+.taken.first.vertical::before {
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
 }
 
-.grid-display .ship {
-    margin: 20px;
-    height: 40px;
-    display: flex;
+.taken.last.vertical,
+.taken.last.vertical::before {
+    border-bottom-left-radius: 50%;
+    border-bottom-right-radius: 50%;
 }
 
-.grid-display.vertical .ship {
-    width: 40px;
-    display: block;
+.taken.vertical::before,
+.taken.horizontal::before {
+    content: "";
+    position: absolute;
+    border: .3vmin solid white;
+    top: -1px;
+    bottom: -1px;
+    left: -1px;
+    right: -1px;
+}
+
+.taken.horizontal::before {
+    animation: ripplesY 3s linear infinite;
+    border-left: none;
+    border-right: none;
+}
+
+.taken.vertical::before {
+    animation: ripplesX 3s linear infinite;
+    border-top: none;
+    border-bottom: none;
+}
+
+@keyframes ripplesX {
+    0% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scaleX(1.3);
+    }
+}
+
+@keyframes ripplesY {
+    0% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scaleY(1.3);
+    }
 }
 
 .destroyer-container {
-    width: 80px;
+    --width: 2;
 }
 
-.grid-display.vertical .destroyer-container {
-    height: 80px;
+.destroyer-container-vertical {
+    --height: 2;
 }
 
 .submarine-container {
-    width: 120px;
+    --width: 3;
 }
 
-.grid-display.vertical .submarine-container {
-    height: 120px;
+.submarine-container-vertical {
+    --height: 3;
 }
 
 .cruiser-container {
-    width: 160px;
+    --width: 4;
 }
 
-.grid-display.vertical .cruiser-container {
-    height: 160px;
+.cruiser-container-vertical {
+    --height: 4;
 }
 
 .battleship-container {
-    width: 200px;
+    --width: 5;
 }
 
-.grid-display.vertical .battleship-container {
-    height: 200px;
+.battleship-container-vertical {
+    --height: 5;
 }
 
 .carrier-container {
-    width: 240px;
+    --width: 6;
 }
 
-.grid-display.vertical .carrier-container {
-    height: 240px;
+.carrier-container-vertical {
+    --height: 6;
 }
 
-.ship div {
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
+.grid-opponent > .taken,
+.grid-opponent > .hit {
+    background-color: transparent !important;
+    border-radius: 0 !important;
 }
 
-.destroyer {
-    background-color: orange;
+.hidden-info {
+    font-size: 1.5rem;
+    align-items: center;
+    flex-direction: column;
 }
 
-.submarine {
-    background-color: pink;
+.info-text {
+    margin: 1rem;
 }
 
-.cruiser {
-    background-color: blue;
+.hit,
+.miss {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.battleship {
-    background-color: green;
+.hit::after,
+.miss::after {
+    content: "";
+    position: absolute;
+    border-radius: 100%;
+    width: 2vmin;
+    height: 2vmin;
 }
 
-.carrier {
-    background-color: yellow;
+.miss::after {
+    background-color: white;
+}
+
+.hit::after {
+    background-color: #962D3E;
+}
+
+.miss::before {
+    content: "";
+    position: absolute;
+    animation: hit .2s ease-out forwards;
+    border: .1vmin solid white;
+    border-radius: 100%;
+    width: 2vmin;
+    height: 2vmin;
+}
+
+.hit {
+    animation: hitship .2s ease-out forwards;
+}
+
+@keyframes hit {
+    0% {
+        opacity: 1;
+        transform: scale(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(4);
+    }
+}
+
+@keyframes hitship {
+    0% {
+        background-color: #962D3E;
+    }
+
+    100% {
+        background-color: hsl(0, 0%, 80%);
+    }
+}
+
+.player {
+    margin: 2vmin;
 }
 
 .connected,
 .ready {
     font-weight: normal;
+    opacity: .25;
+    text-decoration: line-through;
 }
 
-.connected span,
-.ready span {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    background: red;
-    border-radius: 50%;
-}
-
-.connected span.green,
-.ready span.green {
-    background: green;
+.connected.active,
+.ready.active {
+    opacity: 1;
+    text-decoration: none;
 }

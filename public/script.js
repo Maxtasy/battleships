@@ -1,17 +1,15 @@
 const userGrid = document.querySelector(".grid-user");
-const computerGrid = document.querySelector(".grid-computer");
-const displayGrid = document.querySelector(".grid-display");
+const opponentGrid = document.querySelector(".grid-opponent");
+const shipDisplay = document.querySelector(".ship-display");
 const ships = document.querySelectorAll(".ship");
 
 const readyButton = document.querySelector("#ready");
 const rotateButton = document.querySelector("#rotate");
 
-const singleplayerButton = document.querySelector("#singleplayer-button");
-const multiplayerButton = document.querySelector("#multiplayer-button");
+const setupButtons = document.querySelector(".setup-buttons");
 
 const turnDisplay = document.querySelector("#turn-display");
 const infoDisplay = document.querySelector("#info-display");
-const sessionLog = document.querySelector("#session-log");
 
 const BOARD_WIDTH = 10;
 const USER_SQUARES = [];
@@ -47,7 +45,6 @@ let CURRENT_PLAYER = "user";
 let GAME_OVER = false;
 
 // Multiplayer variables
-let gameMode = null;
 let socket = null;
 let playerNum = 0;
 let ready = false;
@@ -140,7 +137,13 @@ function placeComputerShips(shipsArray) {
 }
 
 function rotateShips() {
-    displayGrid.classList.toggle("vertical");
+    shipDisplay.classList.toggle("vertical");
+
+    ships.forEach(ship => {
+        const shipType = ship.dataset.shiptype;
+        ship.classList.toggle(`${shipType}-container-vertical`);
+        ship.classList.toggle(`${shipType}-container`);
+    });
 }
 
 function checkForWin(player) {
@@ -199,7 +202,7 @@ function revealSquare(square) {
         const shiptype = square.classList[1];
         HITS.user[shiptype]++;
         square.classList.add("hit");
-        square.classList.remove("taken");
+        // square.classList.remove("taken");
         soundHit.play();
         checkForWin("user");
     } else {
@@ -213,7 +216,7 @@ function revealSquare(square) {
 
 function handleSquareClick(square) {
     if (gameMode === "singleplayer") {
-        if (allShipsPlaced || CURRENT_PLAYER === "user" && !GAME_OVER) {
+        if (allShipsPlaced && CURRENT_PLAYER === "user" && !GAME_OVER) {
             if (square.classList.contains("miss") || square.classList.contains("hit")) return;
             revealSquare(square);
         }
@@ -251,7 +254,7 @@ function executeComputersMove() {
         const shiptype = randomSquare.classList[1];
         HITS.opponent[shiptype]++;
         randomSquare.classList.add("hit");
-        randomSquare.classList.remove("taken");
+        // randomSquare.classList.remove("taken");
         soundHit.play();
         checkForWin("opponent");
     } else {
@@ -289,18 +292,15 @@ function multiplayerGameLoop() {
 
 function setPlayerReady(playerNum) {
     const player = `.p${parseInt(playerNum) + 1}`;
-    document.querySelector(`${player} .ready span`).classList.toggle("green");
+    document.querySelector(`${player} .ready`).classList.add("active");
 }
 
 function startSingleplayer() {
-    gameMode = "singleplayer";
     placeComputerShips(shipsArray);
     infoDisplay.textContent = "Place all your ships and ready up.";
 }
 
 function startMultiplayer() {
-    gameMode = "multiplayer";
-
     socket = io();
     
     // Get your player number
@@ -311,8 +311,6 @@ function startMultiplayer() {
             playerNum = parseInt(num);
             if (playerNum === 1) CURRENT_PLAYER = "opponent";
     
-            // console.log(playerNum);
-            sessionLog.value += `You connected to the server as Player ${parseInt(num) + 1}.`;
             infoDisplay.textContent = "Place all your ships and ready up.";
 
             // Get other player's status
@@ -333,7 +331,10 @@ function startMultiplayer() {
     socket.on("enemy-ready", num => {
         enemyReady = true;
         setPlayerReady(num);
-        if (ready) multiplayerGameLoop(socket);
+        if (ready) {
+            multiplayerGameLoop();
+            setupButtons.style.display = "none";
+        }
     });
 
     // Receiving players' status from server
@@ -357,7 +358,7 @@ function startMultiplayer() {
 
         if (taken) {
             square.classList.add("hit");
-            square.classList.remove("taken");
+            // square.classList.remove("taken");
             HITS.opponent[shiptype]++;
             soundHit.play();
             checkForWin("opponent");
@@ -385,18 +386,14 @@ function startMultiplayer() {
         shotFiredAtId = -1;
     });
 
-    // Notify player if their 10 minute limit ran out
+    // Notify player if their time limit ran out
     socket.on("timeout", () =>{
-        infoDisplay.textContent = "You have reached the 10 minute limit.";
+        infoDisplay.textContent = "You have reached the time limit.";
     });
 
     function playerConnected(num) {
         const player = `.p${parseInt(num) + 1}`;
-        // console.log(`Player ${num} has connected.`);
-        if (num !== playerNum) {
-            sessionLog.value += `\nPlayer ${parseInt(num) + 1} has connected.`;
-        }
-        document.querySelector(`${player} .connected span`).classList.add("green");
+        document.querySelector(`${player} .connected`).classList.add("active");
         if (parseInt(num) === playerNum) {
             document.querySelector(player).style.fontWeight = "bold";
         }
@@ -404,9 +401,7 @@ function startMultiplayer() {
 
     function playerDisconnected(num) {
         const player = `.p${parseInt(num) + 1}`;
-        // console.log(`Player ${num} has disconnected.`);
-        sessionLog.value += `\nPlayer ${parseInt(num) + 1} has disconnected.`;
-        document.querySelector(`${player} .connected span`).classList.remove("green");
+        document.querySelector(`${player} .connected`).classList.remove("active");
     }
 }
 
@@ -425,10 +420,10 @@ userGrid.addEventListener("dragover", e => {
 userGrid.addEventListener("drop", e => {
     e.preventDefault();
 
-    const droppedOn = (displayGrid.classList.contains("vertical")) ? parseInt(e.target.dataset.id) - ACTIVE_SHIP_CLICK_OFFSET * BOARD_WIDTH : parseInt(e.target.dataset.id) - ACTIVE_SHIP_CLICK_OFFSET;
+    const droppedOn = (shipDisplay.classList.contains("vertical")) ? parseInt(e.target.dataset.id) - ACTIVE_SHIP_CLICK_OFFSET * BOARD_WIDTH : parseInt(e.target.dataset.id) - ACTIVE_SHIP_CLICK_OFFSET;
     const shipLength = ACTIVE_SHIP.children.length;
 
-    if (displayGrid.classList.contains("vertical")) {
+    if (shipDisplay.classList.contains("vertical")) {
         if (droppedOn + shipLength * BOARD_WIDTH >= BOARD_WIDTH * BOARD_WIDTH + BOARD_WIDTH) {
             return;
         }
@@ -442,7 +437,9 @@ userGrid.addEventListener("drop", e => {
 
         for (let i = 0; i < shipLength; i++) {
             const square = document.querySelector(`[data-id='${droppedOn + i * BOARD_WIDTH}']`);
-            square.classList.add("taken", ACTIVE_SHIP.dataset.shiptype);
+            square.classList.add("taken", ACTIVE_SHIP.dataset.shiptype, "vertical");
+            if (i === 0) square.classList.add("first");
+            if (i === shipLength - 1) square.classList.add("last");
         }
 
         ACTIVE_SHIP.remove();
@@ -460,13 +457,15 @@ userGrid.addEventListener("drop", e => {
 
         for (let i = 0; i < shipLength; i++) {
             const square = document.querySelector(`[data-id='${droppedOn + i}']`);
-            square.classList.add("taken", ACTIVE_SHIP.dataset.shiptype);
+            square.classList.add("taken", ACTIVE_SHIP.dataset.shiptype, "horizontal");
+            if (i === 0) square.classList.add("first");
+            if (i === shipLength - 1) square.classList.add("last");
         }
 
         ACTIVE_SHIP.remove();
     }
 
-    if (!displayGrid.querySelector(".ship")) allShipsPlaced = true;
+    if (!shipDisplay.querySelector(".ship")) allShipsPlaced = true;
 });
 
 rotateButton.addEventListener("click", () => {
@@ -481,6 +480,7 @@ readyButton.addEventListener("click", () => {
     if (gameMode === "singleplayer") {
         infoDisplay.textContent = "";
         singleplayerGameLoop();
+        setupButtons.style.display = "none";
     } else if (gameMode === "multiplayer") {
         infoDisplay.textContent = "";
     
@@ -490,14 +490,18 @@ readyButton.addEventListener("click", () => {
             setPlayerReady(playerNum);
         }
 
+        if (enemyReady) setupButtons.style.display = "none";
+
         multiplayerGameLoop();
     }
 });
 
-// Select game mode (singleplayer/multiplayer)
-singleplayerButton.addEventListener("click", startSingleplayer);
-multiplayerButton.addEventListener("click", startMultiplayer);
-
 createBoard(userGrid, USER_SQUARES);
-createBoard(computerGrid, OPPONENT_SQUARES);
-sessionLog.value = "";
+createBoard(opponentGrid, OPPONENT_SQUARES);
+
+// Start game depending on selecte game mode
+if (gameMode === "singleplayer") {
+    startSingleplayer();
+} else if (gameMode === "multiplayer") {
+    startMultiplayer();
+}
