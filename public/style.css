@@ -123,3 +123,22 @@ body {
 .carrier {
     background-color: yellow;
 }
+
+.connected,
+.ready {
+    font-weight: normal;
+}
+
+.connected span,
+.ready span {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    background: red;
+    border-radius: 50%;
+}
+
+.connected span.green,
+.ready span.green {
+    background: green;
+}
