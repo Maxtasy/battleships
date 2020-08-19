@@ -100,7 +100,7 @@ function createBoard(grid, squares) {
 
         if (squares === OPPONENT_SQUARES) {
             square.addEventListener("click", e => {
-                revealSquare(e.target);
+                handleSquareClick(e.target);
             });
         }
 
@@ -164,17 +164,17 @@ function checkForWin(player) {
         HITS[player].submarine = "destroyed";
     }
 
-    if (HITS.user.cruiser === 4) {
+    if (HITS[player].cruiser === 4) {
         infoDisplay.textContent = `${shooter} sunk ${opponent}'s Cruiser!`;
         HITS[player].cruiser = "destroyed";
     }
 
-    if (HITS.user.battleship === 5) {
+    if (HITS[player].battleship === 5) {
         infoDisplay.textContent = `${shooter} sunk ${opponent}'s Battleship!`;
         HITS[player].battleship = "destroyed";
     }
 
-    if (HITS.user.carrier === 6) {
+    if (HITS[player].carrier === 6) {
         infoDisplay.textContent = `${shooter} sunk ${opponent}'s Carrier!`;
         HITS[player].carrier = "destroyed";
     }
@@ -190,31 +190,36 @@ function checkForWin(player) {
 
     if (!remainingShips) {
         GAME_OVER = true;
-        infoDisplay.textContent = `${shooter} Won!`
-        socket.emit("game-over");
+        infoDisplay.textContent = `${shooter} Won!`;
     }
 }
 
 function revealSquare(square) {
+    if (square.classList.contains("taken")) {
+        const shiptype = square.classList[1];
+        HITS.user[shiptype]++;
+        square.classList.add("hit");
+        square.classList.remove("taken");
+        soundHit.play();
+        checkForWin("user");
+    } else {
+        square.classList.add("miss");
+        soundMiss.play();
+    }
+
+    CURRENT_PLAYER = "computer";
+    singleplayerGameLoop();
+}
+
+function handleSquareClick(square) {
     if (gameMode === "singleplayer") {
-        if (!allShipsPlaced || CURRENT_PLAYER !== "user") return;
-        if (square.classList.contains("taken")) {
-            const shiptype = square.classList[1];
-            HITS.user[shiptype]++;
-            square.classList.add("hit");
-            square.classList.remove("taken");
-            soundHit.play();
-            checkForWin("user");
-        } else {
-            square.classList.add("miss");
-            soundMiss.play();
+        if (allShipsPlaced || CURRENT_PLAYER === "user" && !GAME_OVER) {
+            if (square.classList.contains("miss") || square.classList.contains("hit")) return;
+            revealSquare(square);
         }
-    
-        CURRENT_PLAYER = "computer";
-    
-        singleplayerGameLoop();
     } else if (gameMode === "multiplayer") {
-        if (CURRENT_PLAYER === "user" && ready && enemyReady) {
+        if (CURRENT_PLAYER === "user" && ready && enemyReady && !GAME_OVER) {
+            if (square.classList.contains("miss") || square.classList.contains("hit")) return;
             shootAtSquare(square);
         }
     }
@@ -225,9 +230,8 @@ function shootAtSquare(square) {
 
     // Tell enemy that we shot at square with a specific ID
     socket.emit("fired-at-square", shotFiredAtId);
-
+    
     CURRENT_PLAYER = "opponent";
-
     multiplayerGameLoop();
 }
 
@@ -249,7 +253,7 @@ function executeComputersMove() {
         randomSquare.classList.add("hit");
         randomSquare.classList.remove("taken");
         soundHit.play();
-        checkForWin("computer");
+        checkForWin("opponent");
     } else {
         randomSquare.classList.add("miss");
         soundMiss.play();
@@ -381,9 +385,9 @@ function startMultiplayer() {
         shotFiredAtId = -1;
     });
 
-    // Get game over state if opponent won the game
-    socket.on("game-over", () => {
-        GAME_OVER = true;
+    // Notify player if their 10 minute limit ran out
+    socket.on("timeout", () =>{
+        infoDisplay.textContent = "You have reached the 10 minute limit.";
     });
 
     function playerConnected(num) {

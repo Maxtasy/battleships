@@ -52,6 +52,8 @@ io.on("connection", socket => {
 
     // Player clicked ready button
     socket.on("player-ready", () => {
+        console.log(`Player ${parseInt(playerIndex) + 1} is ready.`);
+
         socket.broadcast.emit("enemy-ready", playerIndex);
         connections[playerIndex] = true;
     });
@@ -75,15 +77,16 @@ io.on("connection", socket => {
 
     // Opponent sent back info of hit square
     socket.on("fire-reply", squareInfo => {
-        console.log(`Sending back info of square.`);
+        // console.log(`Sending back info of square.`);
+
         // Forward the info to the shooter
         socket.broadcast.emit("fire-reply", squareInfo);
     });
 
-    // Opponent won the game
-    socket.on("game-over", () => {
-        console.log("Game Over!");
-        // Send game over state to all players
-        socket.broadcast.emit("game-over");
-    });
+    // Timeout connection
+    setTimeout(() => {
+        connections[playerIndex] = null;
+        socket.emit("timeout");
+        socket.disconnect();
+    }, 600000); // 10 minutes limit per player
 });
